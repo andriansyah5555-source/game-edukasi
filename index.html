@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Strike &amp; Loot: Fantasy Idle RPG - Pixel Slayer Saga</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="in-title-screen">
+    <!-- 3D Three.js WebGL Canvas Container -->
+    <div id="canvas-container"></div>
+
+    <!-- Floating 2D / 3D Text Overlays (Damage numbers, loot popups) -->
+    <div id="floating-ui-container"></div>
+
+    <!-- Toast Notification Banner -->
+    <div id="rpg-toast-banner" class="rpg-toast-banner"></div>
+
+    <!-- Title Banner (Top Center) -->
+    <div class="title-banner">
+        <h1>Strike &amp; Loot</h1>
+        <h2>Fantasy Adventure RPG</h2>
+    </div>
+
+    <!-- BOSS HEALTH BAR (Top Center - Active during Dragon Boss fight) -->
+    <div id="boss-bar-container">
+        <div id="boss-name">🐉 ANCIENT CRIMSON DRAGON</div>
+        <div class="boss-bar-wrap">
+            <div id="boss-fill"></div>
+        </div>
+    </div>
+
+    <!-- Top Left HUD: Player Level, HP, EXP, Gold & Stats -->
+    <div class="top-hud">
+        <div class="player-card">
+            <div class="player-identity-row">
+                <div class="level-badge" id="player-level">Lv. 1</div>
+                <div class="player-name-badge" id="player-name">Arthur</div>
+            </div>
+            <div class="bars-container">
+                <div class="bar-wrap">
+                    <div class="hp-bar" id="hp-fill"></div>
+                    <span class="bar-text" id="hp-text">100/100</span>
+                </div>
+                <div class="bar-wrap">
+                    <div class="exp-bar" id="exp-fill"></div>
+                    <span class="bar-text">EXP</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="gold-counter-badge">
+            <span>💰</span>
+            <span id="gold-counter">250</span>
+            <span style="font-size: 11px; color:#fde047;">Gold</span>
+        </div>
+
+        <div class="quiz-score-badge" id="quiz-score-badge" title="Poin Pembelajaran / Skor Kuis (Klik atau Tekan K untuk Ujian Cepat)">
+            <span>🎓</span>
+            <span id="quiz-score-counter">0</span>
+            <span style="font-size: 11px; color:#93c5fd;">Poin Edukasi</span>
+        </div>
+
+        <div class="stat-pills">
+            <div class="stat-pill" id="stat-atk">⚔️ ATK: 35</div>
+            <div class="stat-pill" id="stat-crit">💥 CRIT: 5%</div>
+        </div>
+
+        <button type="button" class="top-menu-btn" id="top-menu-btn" title="Buka Menu Game (ESC)">
+            ⚙️ MENU
+        </button>
+    </div>
+
+    <!-- Directional Compass & Quest Tracker (Top Left) -->
+    <div class="quest-tracker-card">
+        <div class="quest-tracker-header">
+            <span>📜 MISI UTAMA</span>
+            <button class="quest-log-open-btn" id="quest-log-btn" title="Buka Buku Misi (L)">📖 Buku Misi</button>
+        </div>
+        <div class="quest-tracker-title" id="quest-tracker-title">Memuat Misi...</div>
+        <div class="quest-tracker-desc" id="quest-tracker-desc">Petunjuk petualangan sedang disiapkan...</div>
+
+        <div class="quest-progress-row">
+            <div class="quest-bar-wrap">
+                <div id="quest-tracker-bar-fill"></div>
+            </div>
+            <div id="quest-tracker-progress">0/1</div>
+        </div>
+
+        <!-- Directional Pointer Compass -->
+        <div class="compass-direction-box">
+            <span id="quest-compass-arrow">➔</span>
+            <span id="quest-compass-text">Mencari target...</span>
+            <span id="quest-compass-dist">0m</span>
+        </div>
+    </div>
+
+    <!-- REAL-TIME RADAR MINI-MAP (Top Right) -->
+    <div id="minimap-container">
+        <div class="minimap-header-row">
+            <span id="minimap-zone-title">🏰 Desa Oakhaven</span>
+            <span id="minimap-coords">X: 0 | Z: 0</span>
+        </div>
+        <div class="minimap-card" title="Klik untuk membuka Peta Dunia Lengkap (M)">
+            <canvas id="minimap-canvas"></canvas>
+            <div class="minimap-overlay-badge">🗺️ PETA (M)</div>
+        </div>
+    </div>
+
+    <!-- EQUIPMENT SHOP MODAL (From Screenshot) -->
+    <div class="equipment-shop-modal" id="equipment-shop-modal">
+        <div class="shop-header">
+            <div class="shop-title-tab">Equipment Shop</div>
+            <button class="shop-close-btn" id="shop-close-btn" title="Tutup Toko (E)">✕</button>
+        </div>
+
+        <div class="equipment-grid" id="equipment-grid">
+            <!-- Populated dynamically by js/ui.js -->
+        </div>
+
+        <div class="shop-tabs-bar">
+            <button class="shop-tab-btn active" id="tab-weapons">Weapons</button>
+            <button class="shop-tab-btn" id="tab-armor">Armor</button>
+            <button class="shop-tab-btn" id="tab-accessories">Accessories</button>
+            <button class="shop-tab-btn" id="tab-mounts">🐎 Tunggangan</button>
+        </div>
+    </div>
+
+    <!-- FULLSCREEN WORLD MAP MODAL (Atlas & Fast Travel) -->
+    <div class="modal-overlay" id="world-map-modal">
+        <div class="modal-content-box">
+            <div class="modal-header">
+                <h3>🗺️ ATLAS PETUALANGAN DUNIA (WORLD MAP)</h3>
+                <button class="modal-close-btn" id="world-map-close-btn">✕</button>
+            </div>
+            <div class="world-map-zones-grid" id="world-map-zones-grid">
+                <!-- Populated dynamically by js/minimap.js -->
+            </div>
+        </div>
+    </div>
+
+    <!-- EDUCATIONAL QUIZ MODAL (Tantangan Pembelajaran & Ujian RPG) -->
+    <div class="modal-overlay" id="quiz-modal">
+        <div class="quiz-modal-box">
+            <div class="quiz-header">
+                <div class="quiz-header-left">
+                    <span class="quiz-icon-badge" id="quiz-icon">🎓</span>
+                    <div class="quiz-title-wrap">
+                        <h3 id="quiz-title">TANTANGAN KUIS EDUKASI</h3>
+                        <span class="quiz-subject-badge" id="quiz-subject">Matematika</span>
+                    </div>
+                </div>
+                <div class="quiz-header-right">
+                    <div class="quiz-reward-preview" id="quiz-reward-preview">
+                        🎁 +25 Poin | +50 Gold | +30 HP | +40 EXP
+                    </div>
+                    <button type="button" class="modal-close-btn" id="quiz-close-btn" title="Tutup Kuis (ESC)">✕</button>
+                </div>
+            </div>
+
+            <div class="quiz-body">
+                <div class="quiz-context-banner" id="quiz-context">
+                    🌿 Jawab pertanyaan edukasi untuk mendapatkan hadiah dan melanjutkan misi!
+                </div>
+
+                <div class="quiz-question-box">
+                    <div class="quiz-question-text" id="quiz-question-text">
+                        Memuat pertanyaan...
+                    </div>
+                </div>
+
+                <div class="quiz-options-grid" id="quiz-options-grid">
+                    <!-- Populated dynamically with option buttons A, B, C, D -->
+                </div>
+
+                <!-- Feedback & Educational Explanation Section -->
+                <div class="quiz-feedback-box" id="quiz-feedback" style="display: none;">
+                    <div class="quiz-feedback-status" id="quiz-feedback-status"></div>
+                    <div class="quiz-feedback-rewards" id="quiz-feedback-rewards"></div>
+                    <div class="quiz-feedback-explanation" id="quiz-feedback-explanation"></div>
+                    <div class="quiz-feedback-actions" id="quiz-feedback-actions"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- QUEST LOG BOOK MODAL (All Chapters & Quests) -->
+    <div class="modal-overlay" id="quest-log-modal">
+        <div class="modal-content-box">
+            <div class="modal-header">
+                <h3>📖 BUKU CATATAN MISI &amp; PETUALANGAN</h3>
+                <button class="modal-close-btn" id="quest-log-close-btn">✕</button>
+            </div>
+            <div class="quest-log-content" id="quest-log-content">
+                <!-- Populated dynamically by js/ui.js -->
+            </div>
+        </div>
+    </div>
+
+    <!-- PAUSE & IN-GAME MENU MODAL (Real Game Pause Menu) -->
+    <div class="modal-overlay" id="pause-menu-modal">
+        <div class="pause-menu-box">
+            <div class="pause-header">
+                <span class="pause-epic-icon">⏸️</span>
+                <h2>MENU PERMAINAN</h2>
+                <button class="modal-close-btn" id="pause-close-btn" title="Tutup Menu (ESC)">✕</button>
+            </div>
+
+            <div class="pause-player-info">
+                <div class="pause-avatar" id="pause-hero-avatar">⚔️</div>
+                <div class="pause-profile-text">
+                    <div class="pause-hero-name" id="pause-hero-name">Arthur</div>
+                    <div class="pause-hero-class" id="pause-hero-class">Blade Knight</div>
+                    <div class="pause-stats-mini">
+                        <span>⭐ <b id="pause-stat-level">Lv. 1</b></span>
+                        <span>💰 <b id="pause-stat-gold">250</b> Gold</span>
+                        <span>🎓 <b id="pause-stat-quiz">0</b> Poin</span>
+                        <span>🗡️ <b id="pause-stat-weapon">Wooden Sword</b></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Volume & Audio Controls Section -->
+            <div class="pause-volume-section">
+                <div class="pause-volume-header">
+                    <span class="pause-vol-label-epic">🎚️ PENGATURAN VOLUME SUARA &amp; MUSIK</span>
+                </div>
+                
+                <div class="pause-vol-control-card">
+                    <div class="vol-control-row">
+                        <div class="vol-icon-and-name">
+                            <button type="button" class="mini-audio-toggle" id="pause-music-quick-mute" title="Nyalakan / Matikan Musik Utama">
+                                <span id="pause-music-icon-indicator">🎵</span>
+                            </button>
+                            <span class="vol-title-text">Musik Utama (musikutama.mp3)</span>
+                        </div>
+                        <span class="vol-percent-badge" id="pause-music-val">60%</span>
+                    </div>
+                    <div class="slider-container">
+                        <input type="range" id="pause-music-slider" class="rpg-vol-slider" min="0" max="100" value="60" title="Geser untuk mengatur volume musik">
+                    </div>
+                </div>
+
+                <div class="pause-vol-control-card">
+                    <div class="vol-control-row">
+                        <div class="vol-icon-and-name">
+                            <button type="button" class="mini-audio-toggle" id="pause-sound-quick-mute" title="Nyalakan / Matikan Efek Suara">
+                                <span id="pause-sound-icon-indicator">🔊</span>
+                            </button>
+                            <span class="vol-title-text">Efek Suara (SFX Tebas/Sihir/Monster)</span>
+                        </div>
+                        <span class="vol-percent-badge" id="pause-sound-val">80%</span>
+                    </div>
+                    <div class="slider-container">
+                        <input type="range" id="pause-sound-slider" class="rpg-vol-slider" min="0" max="100" value="80" title="Geser untuk mengatur volume efek suara">
+                    </div>
+                </div>
+            </div>
+
+            <div class="pause-menu-buttons">
+                <button type="button" class="pause-btn resume-btn" id="pause-resume-btn">
+                    <span class="btn-icon">▶️</span>
+                    <span class="btn-text">Lanjutkan Petualangan (ESC)</span>
+                </button>
+
+                <div class="pause-btn-grid">
+                    <button type="button" class="pause-btn" id="pause-quest-btn">
+                        <span class="btn-icon">📖</span>
+                        <span class="btn-text">Buku Misi (L)</span>
+                    </button>
+                    <button type="button" class="pause-btn" id="pause-map-btn">
+                        <span class="btn-icon">🗺️</span>
+                        <span class="btn-text">Peta Dunia (M)</span>
+                    </button>
+                    <button type="button" class="pause-btn" id="pause-sound-btn">
+                        <span class="btn-icon" id="pause-sound-icon">🔊</span>
+                        <span class="btn-text" id="pause-sound-text">Efek Suara</span>
+                    </button>
+                    <button type="button" class="pause-btn" id="pause-music-btn">
+                        <span class="btn-icon" id="pause-music-icon">🎵</span>
+                        <span class="btn-text" id="pause-music-text">Musik Fantasi</span>
+                    </button>
+                    <button type="button" class="pause-btn" id="pause-respawn-btn">
+                        <span class="btn-icon">🔄</span>
+                        <span class="btn-text">Ke Alun-Alun Desa</span>
+                    </button>
+                    <button type="button" class="pause-btn" id="pause-help-btn">
+                        <span class="btn-icon">❓</span>
+                        <span class="btn-text">Panduan Kontrol</span>
+                    </button>
+                </div>
+
+                <button type="button" class="pause-btn exit-title-btn" id="pause-exit-btn">
+                    <span class="btn-icon">🚪</span>
+                    <span class="btn-text">Keluar ke Menu Utama (Pilih Karakter)</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dialogue Box (Bottom - Exact layout from screenshot) -->
+    <div class="dialogue-container" id="dialogue-box">
+        <div class="portrait-avatar-wrapper" id="dialogue-portrait">
+            <!-- Dynamic SVG character portrait -->
+        </div>
+        <div class="dialogue-speech-bubble">
+            <div class="dialogue-text" id="dialogue-text">
+                This sword's too weak. I need a stronger weapon.
+            </div>
+            <span class="dialogue-arrow">▼</span>
+        </div>
+    </div>
+
+    <!-- Action Controls & Skills (Bottom Right) -->
+    <div class="action-controls">
+        <div class="skills-hud">
+            <button class="skill-btn" id="skill-whirlwind-btn" title="Putaran Pedang Badai [Q]">🌀</button>
+            <button class="skill-btn" id="skill-dash-btn" title="Lompatan Cepat Dash [Shift]">💨</button>
+            <button class="skill-btn jump-btn" id="jump-btn" title="Melompat [Spasi]">🦘</button>
+            <button class="skill-btn mount-hud-btn" id="mount-btn" title="Naik / Turun Tunggangan [R]">🐎</button>
+            <button class="skill-btn" id="potion-btn" title="Minum Ramuan Darah [H]">🧪</button>
+        </div>
+
+        <button class="big-attack-btn" id="attack-btn" title="Serang (Klik Kiri / F)">⚔️</button>
+
+        <div class="quick-btn-row">
+            <button class="quick-btn" id="menu-btn" title="Menu Permainan (ESC)">⚙️</button>
+            <button class="quick-btn" id="quiz-btn" title="Kuis &amp; Latihan Edukasi (K)">🎓</button>
+            <button class="quick-btn" id="world-map-btn" title="Buka Peta Dunia (M)">🗺️</button>
+            <button class="quick-btn" id="toggle-shop-btn" title="Toko &amp; Tunggangan (E)">🏪</button>
+            <button class="quick-btn" id="sound-btn" title="Suara Efek">🔊</button>
+            <button class="quick-btn" id="music-btn" title="Musik Fantasy">🎵</button>
+        </div>
+    </div>
+
+    <!-- ACTIVE MOUNT FLOATING STATUS BADGE -->
+    <div class="mount-active-pill" id="mount-active-hud" style="display: none;">
+        <span class="mount-active-icon" id="mount-active-icon">🐎</span>
+        <div class="mount-active-info">
+            <span class="mount-active-title" id="mount-active-name">Kuda Perang</span>
+            <span class="mount-active-sub">Tekan [R] untuk Turun</span>
+        </div>
+    </div>
+
+    <!-- Virtual Joystick for Mobile Touch Devices -->
+    <div id="joystick-zone">
+        <div id="joystick-knob"></div>
+    </div>
+
+    <!-- Controls Keyboard Hint -->
+    <div class="controls-hint">
+        🎮 <b>WASD/Panah</b>: Gerak | <b>Spasi</b>: Lompat | <b>R</b>: Tunggangan | <b>Klik/F</b>: Serang | <b>Q</b>: Jurus 1 | <b>Shift</b>: Dash | <b>H</b>: Ramuan | <b>K</b>: Kuis Edukasi | <b>ESC</b>: Menu | <b>M</b>: Peta | <b>L</b>: Misi | <b>E</b>: Ajak Bicara / Ambil
+    </div>
+
+    <!-- START / TITLE SCREEN OVERLAY (Character Selection & Name Creation) -->
+    <div id="start-screen-overlay" class="start-screen-overlay">
+        <div class="start-screen-container">
+            <!-- Branding Header -->
+            <div class="start-header">
+                <div class="start-epic-pill">⚔️ 3D ACTION ADVENTURE RPG ⚔️</div>
+                <h1 class="start-title">KING OF DRAGON</h1>
+                <p class="start-subtitle">Pilih pahlawan andalanmu, tentukan namamu, dan jelajahi indahnya dunia Oakhaven!</p>
+                
+                <!-- Title Screen Audio & Volume Bar -->
+                <div class="start-audio-bar">
+                    <button type="button" id="start-music-toggle-btn" class="start-audio-pill" title="Putar / Hentikan Musik Utama">
+                        <span id="start-music-icon">🎵</span>
+                        <span id="start-music-text">Musik Utama: 60%</span>
+                    </button>
+                    <div class="start-volume-group">
+                        <span class="start-vol-icon-min">🔉</span>
+                        <input type="range" id="start-music-slider" class="rpg-vol-slider mini" min="0" max="100" value="60" title="Atur volume suara musik utama">
+                        <span class="start-vol-icon-max">🔊</span>
+                        <span id="start-music-val" class="start-vol-badge">60%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hero Name Input Section -->
+            <div class="start-card-section">
+                <div class="start-section-title">
+                    <span class="icon">🏷️</span>
+                    <span>NAMA PAHLAWAN PETUALANG</span>
+                </div>
+                <div class="start-name-input-group">
+                    <input type="text" id="player-name-input" class="start-name-input" maxlength="18" placeholder="Ketik nama pahlawanmu..." value="Arthur">
+                    <button type="button" id="random-name-btn" class="start-dice-btn" title="Pilih Nama Fantasi Acak">
+                        🎲 Acak Nama
+                    </button>
+                </div>
+            </div>
+
+            <!-- Character Class Selection Section -->
+            <div class="start-card-section">
+                <div class="start-section-title">
+                    <div class="title-left">
+                        <span class="icon">🛡️</span>
+                        <span>PILIH KELAS &amp; KARAKTER PAHLAWAN</span>
+                    </div>
+                    <span class="selection-preview-hint">👀 Model 3D langsung berganti di layar!</span>
+                </div>
+
+                <div class="char-classes-grid" id="char-classes-grid">
+                    <!-- Populated dynamically from HERO_PRESETS in js/game.js -->
+                </div>
+            </div>
+
+            <!-- Start Game CTA Button -->
+            <div class="start-action-container">
+                <button type="button" id="start-game-btn" class="big-start-adventure-btn">
+                    <span class="btn-sword-icon">⚔️</span>
+                    <span class="btn-text-group">
+                        <span class="btn-main-title">MULAI PETUALANGAN</span>
+                        <span class="btn-sub-title">Masuk ke Desa Oakhaven &amp; Jalankan Misi</span>
+                    </span>
+                    <span class="btn-glow-arrow">➔</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts: Three.js and RPG Modules in Order -->
+    <script src="js/three.min.js"></script>
+    <script>
+        if (typeof THREE === 'undefined') {
+            document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>');
+        }
+    </script>
+    <script src="js/assets.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/questions.js"></script>
+    <script src="js/quiz.js"></script>
+    <script src="js/quests.js"></script>
+    <script src="js/minimap.js"></script>
+    <script src="js/models.js"></script>
+    <script src="js/world.js"></script>
+    <script src="js/combat.js"></script>
+    <script src="js/player.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/game.js"></script>
+</body>
+</html>
